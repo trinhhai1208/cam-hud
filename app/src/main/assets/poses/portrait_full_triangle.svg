@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Full-body Tall Hack Triangle Pose Guide: Head at ~48%, Feet at 95% (5% bottom margin) -->
+  <!-- Golden Triangle Composition Frame -->
+  <polygon points="50,44 26,95 74,95" fill="none" stroke="#F59E0B" stroke-width="0.7" stroke-dasharray="3,3"/>
+  <!-- Head Contour (around center 48%) -->
+  <ellipse cx="50" cy="49" rx="4.5" ry="5.8" fill="none" stroke="#38BDF8" stroke-width="0.9"/>
+  <!-- Torso & Angled Legs (A-Frame Stance for Length) -->
+  <path d="M 50 55 L 49 69 L 38 95 M 49 69 L 61 95 M 42 58 L 35 70 L 44 72 M 58 58 L 64 72" fill="none" stroke="#38BDF8" stroke-width="0.9" stroke-dasharray="2,1.5"/>
+  <!-- Shoe-tip 5% Bottom Alignment Bar -->
+  <line x1="20" y1="95" x2="80" y2="95" stroke="#10B981" stroke-width="1.2"/>
+</svg>

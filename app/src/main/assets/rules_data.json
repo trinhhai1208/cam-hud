@@ -1,0 +1,104 @@
+{
+  "version": "2.0",
+  "target_device": "Xiaomi Redmi Note 13 Pro (HyperOS)",
+  "sensor_config": {
+    "sensor_type": "TYPE_GAME_ROTATION_VECTOR",
+    "hysteresis_deg": 0.3,
+    "redraw_threshold_deg": 0.15,
+    "gyro_window_ms": 300,
+    "fallback_overlay_alpha": 0.78
+  },
+  "viewfinder_defaults": {
+    "screen_aspect": "20:9",
+    "ratio_4_3": {
+      "top_normalized": 0.145,
+      "bottom_normalized": 0.745
+    },
+    "ratio_16_9": {
+      "top_normalized": 0.095,
+      "bottom_normalized": 0.895
+    }
+  },
+  "modes": {
+    "PORTRAIT_HALF": {
+      "id": "PORTRAIT_HALF",
+      "category": "PORTRAIT",
+      "display_name": "Chân dung: Bán thân",
+      "short_label": "PORT-HALF",
+      "pitch_min_deg": -3.0,
+      "pitch_max_deg": 3.0,
+      "roll_max_deg": 1.5,
+      "eye_line_ratio": 0.333,
+      "pose_svg": "poses/portrait_half.svg",
+      "tip": "Đặt mắt mẫu vào vạch ngang 1/3 trên. Không cắt ngang khuỷu tay/cổ tay. Chọn ống kính 2x để xóa phông và chống méo mặt."
+    },
+    "PORTRAIT_FULL": {
+      "id": "PORTRAIT_FULL",
+      "category": "PORTRAIT",
+      "display_name": "Chân dung: Toàn thân (Hack dáng)",
+      "short_label": "PORT-FULL",
+      "pitch_min_deg": 5.0,
+      "pitch_max_deg": 12.0,
+      "roll_max_deg": 1.5,
+      "foot_margin_bottom_ratio": 0.05,
+      "head_top_ratio": 0.48,
+      "pose_svg": "poses/portrait_full_triangle.svg",
+      "tip": "Hạ máy ngang thắt lưng và hơi ngửa lên (+5° đến +12°). Mép dưới khung hình chạm sát mũi giày (5%). Đầu mẫu nằm khoảng giữa khung hình."
+    },
+    "LANDSCAPE": {
+      "id": "LANDSCAPE",
+      "category": "LANDSCAPE",
+      "display_name": "Phong cảnh (Landscape)",
+      "short_label": "LANDSCAPE",
+      "pitch_min_deg": -35.0,
+      "pitch_max_deg": 35.0,
+      "roll_max_deg": 1.0,
+      "tip": "Trời đẹp đặt chân trời 1/3 dưới; Đất đẹp đặt 1/3 trên. Luôn tìm 1 vật thể làm Tiền cảnh tạo chiều sâu 3 lớp."
+    },
+    "ARCHITECTURE": {
+      "id": "ARCHITECTURE",
+      "category": "ARCHITECTURE",
+      "display_name": "Kiến trúc & Nội thất",
+      "short_label": "ARCH",
+      "pitch_min_deg": -1.5,
+      "pitch_max_deg": 1.5,
+      "roll_max_deg": 1.0,
+      "tip": "Muốn lấy trọn đỉnh tòa nhà, hãy lùi ra xa hoặc chuyển sang 0.6x nhưng vẫn giữ Pitch = 0° thay vì ngửa máy lên (tránh đổ cột Keystone)."
+    },
+    "STREET": {
+      "id": "STREET",
+      "category": "STREET",
+      "display_name": "Đường phố & Đời thường",
+      "short_label": "STREET",
+      "pitch_min_deg": -25.0,
+      "pitch_max_deg": 25.0,
+      "roll_max_deg": 2.0,
+      "lead_room_ratio": 0.667,
+      "pose_svg": "poses/street_walking.svg",
+      "tip": "Đặt chủ thể vào tâm xoắn ốc Fibonacci. Chừa khoảng trống 2/3 khung hình (Looking Room) ở phía trước hướng di chuyển của nhân vật."
+    },
+    "BROLL": {
+      "id": "BROLL",
+      "category": "BROLL",
+      "display_name": "Quay Video B-Roll Điện Ảnh",
+      "short_label": "B-ROLL",
+      "pitch_min_deg": -45.0,
+      "pitch_max_deg": 45.0,
+      "roll_max_deg": 1.5,
+      "omega_min_rad_s": 0.08,
+      "omega_max_rad_s": 0.25,
+      "sigma_omega_max_rad_s": 0.08,
+      "rhythm_phases_sec": [1, 3, 1],
+      "shot_tags": [
+        "WIDE",
+        "MED",
+        "TIGHT-HANDS",
+        "TIGHT-FACE",
+        "OTS"
+      ],
+      "warning_fast_pan": "Lia máy quá nhanh! Hãy chậm lại (ω ≤ 0.25 rad/s).",
+      "warning_jerky": "Tay đang bị khựng, hãy khóa cổ tay và di chuyển bằng cả cơ thể!",
+      "tip": "Giữ nhịp 5 giây: 1s đứng yên đầu + 3s lia mượt (4.5°/s - 14°/s) + 1s đứng yên cuối. Quay đủ 5 cỡ cảnh W-M-T."
+    }
+  }
+}

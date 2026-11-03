@@ -7,7 +7,7 @@
 > 1. **Nâng cấp cơ chế chạm xuyên (Touch Pass-Through):** Bổ sung **`TYPE_ACCESSIBILITY_OVERLAY` (Accessibility Service)** bên cạnh `TYPE_APPLICATION_OVERLAY (alpha ≤ 0.8f)`. Cửa sổ Accessibility là *Trusted Overlay* nên **không bị Android 12+ giới hạn độ mờ 0.8** và **không bị HyperOS tự động kill ngầm**.
 > 2. **Tối ưu Tech Stack (Bỏ Flutter, dùng 100% Native Kotlin):** Vì cả 2 cửa sổ nổi (`GridOverlayView` + `PillOverlayView`), cảm biến `TYPE_GAME_ROTATION_VECTOR` và `MediaStore Observer` đều phải viết bằng Kotlin, việc chuyển sang **Pure Native Kotlin (Jetpack Compose + Custom Canvas View)** giúp giảm 85% dung lượng app, không phải nuôi 2 Engine và loại bỏ hoàn toàn cầu nối `MethodChannel` phức tạp.
 > 3. **Tự động hóa `shot_log.json` bằng `ContentObserver` (`MediaStore`):** Thay vì bắt người dùng tự bấm tick thủ công rồi so lệch giây đồng hồ, App lắng nghe sự kiện sinh file mới trong `DCIM/Camera` ngay khi bạn bấm dừng quay trên Camera Xiaomi để gắn nhãn chính xác 100% tên file thật (`VID_2026xxxx.mp4`) cùng góc Pitch/Roll và độ mượt lúc quay.
-> 4. **Chuẩn hóa Toán học Cảm biến:** Dùng `TYPE_GAME_ROTATION_VECTOR` + `remapCoordinateSystem` (tự động đổi trục khi xoay ngang/dọc máy) + Calibration 0° + Hysteresis `0.3°` + Đo cả vận tốc góc ($\omega \le 0.25\ \text{rad/s}$) lẫn độ giật cục ($\sigma_\omega \le 0.08\ \text{rad/s}$).
+> 4. **Chuẩn hóa Toán học Cảm biến:** Dùng `TYPE_GAME_ROTATION_VECTOR` + tính trực tiếp từ Up Vector của ma trận xoay (không Gimbal Lock, tự nhận hướng cầm dọc/ngang từ trọng lực) + Calibration 0° + Hysteresis `0.3°` + Đo cả vận tốc góc ($\omega \le 0.25\ \text{rad/s}$) lẫn độ giật cục ($\sigma_\omega \le 0.08\ \text{rad/s}$).
 
 ---
 
@@ -86,7 +86,7 @@ Thay vì viết lại một ứng dụng Camera bên thứ 3 (vốn bị giới 
 
 ```mermaid
 flowchart TD
-    Start["Mở App Camera Coach (Kotlin)"] --> Calib["Hiệu chỉnh lần đầu: Đặt máy phẳng (0°) & Khớp khung 4:3 / 16:9"]
+    Start["Mở App Camera Coach (Kotlin)"] --> Calib["Hiệu chỉnh lần đầu: Dựng máy thẳng đứng áp vào tường (0°) & Khớp khung 4:3 / 16:9"]
     Calib --> StartService["Bật Overlay Service (Accessibility hoặc App Overlay alpha=0.8)"]
     StartService --> Spawn2Win["Khởi tạo 2 Cửa Sổ Độc Lập trên WindowManager"]
     
@@ -135,28 +135,39 @@ flowchart TD
 
 ## 4. CÔNG THỨC XỬ LÝ CẢM BIẾN CHUẨN XÁC (NATIVE KOTLIN)
 
-Sử dụng `Sensor.TYPE_GAME_ROTATION_VECTOR` và tự động quy đổi hệ trục tọa độ theo hướng cầm máy (Dọc `ROTATION_0`, Ngang trái `ROTATION_90`, Ngang phải `ROTATION_270`):
+Sử dụng `Sensor.TYPE_GAME_ROTATION_VECTOR` và tính toán trực tiếp từ Vector Thiên Đỉnh (**Up Vector**) trong Ma trận xoay. Cách tiếp cận này **triệt tiêu hoàn toàn hiện tượng Gimbal Lock (Khóa trục)** khi cầm máy dọc để chụp ảnh, đồng thời tự động nhận diện hướng xoay máy từ trọng lực mà không phụ thuộc vào `display.rotation` (vốn bị Camera Xiaomi khóa cứng ở `ROTATION_0`):
 
 ```kotlin
-// 1. Chuyển Vector cảm biến thành Ma trận xoay
+// 1. Chuyển Vector cảm biến thành Ma trận xoay 3x3
 SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
 
-// 2. Tự động đổi trục theo hướng cầm điện thoại (Dọc hoặc Ngang khi quay Video)
-val (axisX, axisY) = when (display.rotation) {
-    Surface.ROTATION_90  -> SensorManager.AXIS_Y to SensorManager.AXIS_MINUS_X
-    Surface.ROTATION_270 -> SensorManager.AXIS_MINUS_Y to SensorManager.AXIS_X
-    else                 -> SensorManager.AXIS_X to SensorManager.AXIS_Y
+// 2. Vector "Up" (thiên đỉnh) của thế giới thực quy đổi vào hệ trục tọa độ điện thoại:
+// R biến đổi từ device -> world, ma trận trực giao R^-1 = R^T
+// v_dev = R^T * [0, 0, 1]^T = [R[6], R[7], R[8]]^T
+val upX = rotationMatrix[6]
+val upY = rotationMatrix[7]
+val upZ = rotationMatrix[8]
+
+// 3. Tính góc Pitch (chúc/ngửa camera -Z) trực tiếp từ upZ — Triệt tiêu 100% Gimbal Lock:
+// Khi cầm máy dựng đứng: pitch = 0°; ngửa lên trời (+): pitch > 0°; chúc xuống đất (-): pitch < 0°
+val rawPitchDeg = Math.toDegrees(asin(-upZ.coerceIn(-1f, 1f).toDouble())).toFloat()
+val pitchDeg = rawPitchDeg - calibPitchOffset
+
+// 4. Nhận diện góc xoay trong mặt phẳng máy (Roll) và hướng cầm máy (Dọc/Ngang) từ trọng lực.
+// Bỏ qua khi máy gần nằm ngang (quay flat-lay) vì upX, upY ≈ 0 khiến atan2 nhảy loạn:
+if (sqrt(upX * upX + upY * upY) >= 0.3f) {
+    val rawAngleDeg = Math.toDegrees(atan2(upX.toDouble(), upY.toDouble())).toFloat()
+    val (deviceRotation, horizonRoll) = resolveRotationAndHorizon(rawAngleDeg)
+    latestRawRollDeg = horizonRoll
 }
-SensorManager.remapCoordinateSystem(rotationMatrix, axisX, axisY, remappedMatrix)
+val rollDeg = latestRawRollDeg - calibRollOffset
 
-// 3. Lấy góc Pitch (chúc/ngửa) và Roll (nghiêng chân trời) tính bằng Độ
-SensorManager.getOrientation(remappedMatrix, orientationAngles)
-val rawPitchDeg = Math.toDegrees(orientationAngles[1].toDouble()).toFloat() - calibPitchOffset
-val rawRollDeg  = Math.toDegrees(orientationAngles[2].toDouble()).toFloat() - calibRollOffset
+// 5. Cửa sổ trượt Gyroscope 300ms đo tốc độ lia (ω) và độ giật cổ tay (σ_ω) bằng timestamp phần cứng (ns):
+// Tốc độ lia chuẩn: ω in [0.08, 0.25] rad/s; Độ giật cổ tay: σ_ω <= 0.08 rad/s
 
-// 4. Chỉ vẽ lại Canvas (invalidate) khi góc thay đổi > 0.15 độ để tiết kiệm Pin & chống nóng máy
-if (abs(rawRollDeg - lastRollDeg) > 0.15f || abs(rawPitchDeg - lastPitchDeg) > 0.15f) {
-    gridOverlayView.updateAngles(rawPitchDeg, rawRollDeg)
+// 6. Chỉ vẽ lại Canvas (invalidate) khi góc thay đổi > 0.15 độ để tiết kiệm Pin & chống nóng máy:
+if (abs(rollDeg - lastRollDeg) > 0.15f || abs(pitchDeg - lastPitchDeg) > 0.15f) {
+    gridOverlayView.updateTelemetry(telemetry)
 }
 ```
 
@@ -323,3 +334,34 @@ CameraCoachExtension/
 | **Bước 2 (Core Sensor)** | Lập trình `OrientationEngine.kt` (`TYPE_GAME_ROTATION_VECTOR` + Gyro + Xoay ngang/dọc + Calibration 0°) | **2 – 3 ngày** | Thước thủy đổi sang màu Xanh lá + rung nhẹ 1 nhịp (Edge-trigger) khi cân bằng; báo vàng khi lia máy quá nhanh ($> 0.25\ \text{rad/s}$). |
 | **Bước 3 (Visual & Modes)** | Vẽ bộ Lưới cho 5 chế độ (`rules_data.json`), khung dáng SVG và thanh đếm nhịp 5s cho B-Roll | **3 – 4 ngày** | Chuyển đổi mượt giữa 5 chế độ trên thanh Pill; khung lưới khớp chính xác với vùng ngắm `4:3` và `16:9` của Camera Xiaomi. |
 | **Bước 4 (Shot Logger)** | Lập trình `MediaShotLogger.kt` tự động ghi `shot_log.json` mỗi khi chụp/quay xong | **1 – 2 ngày** | Quay thử 3 clip B-Roll, mở file `shot_log.json` thấy ghi đúng tên file `VID_...mp4` kèm nhãn cỡ cảnh và độ mượt. |
+
+---
+
+## 8. KHẢ NĂNG TƯƠNG THÍCH ĐA THIẾT BỊ & LỘ TRÌNH MỞ RỘNG (MULTI-DEVICE EXPANSION)
+
+Mặc dù **Xiaomi Redmi Note 13 Pro (HyperOS)** được chọn làm thiết bị chuẩn để Demo và tinh chỉnh trong Giai đoạn 1, toàn bộ kiến trúc mã nguồn hiện tại được xây dựng trên chuẩn **Android AOSP (API 26 – 34+)** nên **không bị khóa cứng vào phần cứng Xiaomi** và có thể chạy ngay trên các dòng máy **Samsung (One UI), Google Pixel, OPPO (ColorOS), Vivo (OriginOS/Funtouch), Realme, OnePlus, Sony Xperia...**
+
+### 8.1. Các thành phần trong mã nguồn hiện tại đã tương thích sẵn đa thiết bị
+
+1. **Cảm biến & Toán học (`OrientationEngine.kt`):**
+   * Sử dụng API chuẩn `Sensor.TYPE_GAME_ROTATION_VECTOR` và tự động lùi về (`fallback`) `Sensor.TYPE_ROTATION_VECTOR` đối với các dòng máy phổ thông không trang bị cảm biến Game Rotation riêng.
+   * Góc Pitch/Roll tính trực tiếp từ Up Vector của ma trận xoay và hướng cầm máy suy ra từ trọng lực, nên không phụ thuộc việc app Camera của từng hãng có khóa UI dọc hay không.
+2. **Lớp phủ chạm xuyên (`CoachOverlayService.kt`):**
+   * Cơ chế giới hạn chạm xuyên (`alpha <= 0.8f`) đối với `TYPE_APPLICATION_OVERLAY` và quyền ưu tiên *Trusted Overlay* của `TYPE_ACCESSIBILITY_OVERLAY` (`alpha = 1.0f`) là quy chuẩn bảo mật chung của nhân **Android 12+ (Google AOSP)**, hoạt động giống hệt nhau trên mọi bản ROM của các hãng.
+3. **Khung ngắm thích ứng mọi tỷ lệ màn hình (`GridOverlayView.kt` & `PillControlView.kt`):**
+   * Không gán cứng độ phân giải pixel (`1080x2400`) mà lưu theo **tọa độ chuẩn hóa phần trăm (`0.0f .. 1.0f`)** kết hợp tính năng **`📐 KHỚP KHUNG`** trực tiếp trên thanh nổi (`▲/▼ ±1%`). Nhờ đó, dù cài lên màn hình tỷ lệ `19.5:9`, `20:9` hay `21:9`, người dùng đều có thể căn chỉnh khớp 100% với vùng preview của Camera máy đó và lưu vào `SharedPreferences`.
+4. **Mở Camera & Tự động bắt file (`MainActivity.kt` & `MediaShotLogger.kt`):**
+   * Nếu thiết bị không phải Xiaomi (không có gói `com.android.camera` / `com.miui.camera`), ứng dụng tự động gọi `MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA` để mở ứng dụng Camera mặc định của máy.
+   * `MediaShotLogger` đọc trực tiếp trường `MediaStore.MediaColumns.DISPLAY_NAME`, nên dù các hãng đặt quy tắc tên file khác nhau (Xiaomi: `VID_2026xxxx.mp4`, Samsung: `20261103_xxxx.mp4`, Google Pixel: `PXL_2026xxxx.mp4`), file `shot_log.json` đều ghi nhận chính xác 100%.
+
+### 8.2. Lộ trình nâng cấp khi mở rộng sang nhiều dòng thiết bị thương mại
+
+Khi phát triển từ bản Demo cá nhân sang bản phân phối rộng rãi cho nhiều hệ máy, dự án sẽ mở rộng theo 4 hạng mục sau:
+
+| Hạng mục nâng cấp | Giải pháp kỹ thuật chi tiết |
+| :--- | :--- |
+| **1. Tự động khớp khung ngắm theo hãng (`OEM Viewfinder Profiles`)** | Đọc `Build.MANUFACTURER` & `Build.MODEL` kết hợp công thức toán học: chiều cao khung `4:3` luôn bằng $\text{ScreenWidth} \times \frac{4}{3}$ và khung `16:9` bằng $\text{ScreenWidth} \times \frac{16}{9}$. Bổ sung file cấu hình `oem_viewfinder_offsets.json` chứa vị trí thanh Top Bar của từng hãng (Samsung, Xiaomi, OPPO, Pixel, Vivo) để vừa cài app là khớp sẵn 100% không cần chỉnh tay. |
+| **2. Tự động Hiện/Ẩn HUD khi mở/thoát Camera (`Auto-Show/Hide`)** | Tận dụng sự kiện `TYPE_WINDOW_STATE_CHANGED` của `CoachAccessibilityService` để kiểm tra `event.packageName`. Khi phát hiện người dùng mở ứng dụng Camera thuộc danh sách trắng (`com.android.camera`, `com.sec.android.app.camera`, `com.google.android.GoogleCamera`, `com.oplus.camera`, `com.vivo.camera`...) thì **tự động bật 2 cửa sổ HUD**; khi người dùng vuốt ra màn hình chính hoặc chuyển sang app khác thì **tự động ẩn HUD**. |
+| **3. Hỗ trợ Điện thoại màn hình gập (`Foldables`) & Tablet** | Lắng nghe sự kiện `onConfigurationChanged` trong `CoachOverlayService` để tự động tính toán lại kích thước cửa sổ và ma trận cảm biến khi người dùng gập/mở màn hình (ví dụ dòng Samsung Galaxy Z Fold / Z Flip). |
+| **4. Hướng phát triển phiên bản iOS (iPhone)** | Do hệ điều hành iOS đóng hộp (`Sandbox`) không cho phép vẽ lớp phủ đè lên ứng dụng Camera gốc của Apple, phiên bản iOS sẽ được phát triển dưới dạng **In-App Camera sử dụng `AVFoundation`**. Điểm thuận lợi là trên iOS, Apple mở toàn bộ API chất lượng cao nhất (`Apple ProRAW 48MP`, `Apple Log`, `ProRes`, chống rung OIS phần cứng và toàn bộ ống kính `0.5x / 1x / 2x / 5x`) cho ứng dụng bên thứ 3. |
+

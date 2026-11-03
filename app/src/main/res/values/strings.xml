@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CAM-HUD Coach</string>
+    <string name="accessibility_service_label">CAM-HUD Camera Coach Overlay</string>
+    <string name="accessibility_service_description">Hiển thị lớp phủ lưới bố cục, thước thủy cân bằng và hướng dẫn quay B-Roll sắc nét (Trusted Overlay alpha 1.0) đè lên ứng dụng Camera gốc mà vẫn cho phép chạm xuyên 100%.</string>
+</resources>

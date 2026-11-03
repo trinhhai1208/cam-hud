@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Background Circle -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M54,4A50,50 0,1 1,4 54A50,50 0,0 1,54 4z" />
+    <!-- Outer HUD Ring -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M54,12A42,42 0,1 1,12 54A42,42 0,0 1,54 12z"
+        android:strokeWidth="2.5"
+        android:strokeColor="#10B981" />
+    <!-- Rule of Thirds Grid Lines -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M40,22L40,86M68,22L68,86M22,40L86,40M22,68L86,68"
+        android:strokeWidth="1.8"
+        android:strokeColor="#64748B" />
+    <!-- Center Spirit Level Horizon Line -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M26,54L46,54M62,54L82,54"
+        android:strokeWidth="3.5"
+        android:strokeColor="#10B981" />
+    <!-- Center Reticle Dot -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M54,50A4,4 0,1 1,50 54A4,4 0,0 1,54 50z" />
+</vector>

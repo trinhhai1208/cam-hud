@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Quyền hiển thị cửa sổ nổi dự phòng (TYPE_APPLICATION_OVERLAY, alpha <= 0.8f) -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- Quyền chạy dịch vụ nền Foreground Service (Android 13/14) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Quyền rung phản hồi xúc giác (Haptic Edge-Trigger khi đạt cân bằng) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Quyền đọc MediaStore để MediaShotLogger bắt tên file thật VID_...mp4 / IMG_...jpg -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Android 14: khai báo để app tự phân biệt "Cho phép tất cả" và "Chỉ chọn một số ảnh" -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29"
+        tools:ignore="ScopedStorage" />
+
+    <!-- Khai báo cảm biến sử dụng -->
+    <uses-feature
+        android:name="android.hardware.sensor.gyroscope"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.sensor.accelerometer"
+        android:required="true" />
+
+    <!-- Cho phép gọi Intent mở trực tiếp App Camera gốc của Xiaomi (HyperOS / MIUI) -->
+    <queries>
+        <package android:name="com.android.camera" />
+        <package android:name="com.miui.camera" />
+        <intent>
+            <action android:name="android.media.action.STILL_IMAGE_CAMERA" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.VIDEO_CAMERA" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_camera_hud"
+        android:roundIcon="@drawable/ic_camera_hud"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.CameraCoach">
+
+        <!-- Màn hình chính: Cài đặt, Calibration 0°, Cân chỉnh khung ngắm 4:3 / 16:9 -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Cách 1 (Khuyên dùng trên HyperOS): Accessibility Trusted Overlay (alpha = 1.0f, chạm xuyên 100%) -->
+        <service
+            android:name=".CoachAccessibilityService"
+            android:exported="true"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <!-- Cách 2 (Dự phòng không cần Accessibility): Foreground Service với TYPE_APPLICATION_OVERLAY (alpha = 0.78f) -->
+        <service
+            android:name=".CoachOverlayService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="camera_hud_composition_overlay" />
+        </service>
+
+    </application>
+
+</manifest>
