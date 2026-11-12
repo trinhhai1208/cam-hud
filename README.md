@@ -57,6 +57,131 @@ Người dùng vừa tận dụng được 100% thuật toán xử lý ảnh, ch
 
 ---
 
+## 📖 Hướng dẫn Sử dụng Chi tiết & Ý nghĩa Các Thông số (User Manual & Telemetry Guide)
+
+### 1. Ý nghĩa các thông số hiển thị trên lớp phủ HUD
+
+Khi mở Camera, lớp phủ HUD hiển thị thông số thời gian thực ở mép trên và trung tâm khung ngắm:
+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│ [PORT 1/2] [4:3] | P:+0.5° R:-0.2° | ω:0.14 | ● CÂN BẰNG                │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+| Ký hiệu / Thông số | Tên gọi & Giải nghĩa kỹ thuật | Ngưỡng chuẩn & Quy tắc nhiếp ảnh |
+| :--- | :--- | :--- |
+| **`[PORT 1/2]`** | **Chế độ quay/chụp hiện tại:** 1 trong 5 chế độ (`PORT 1/2`, `PORT FULL`, `LANDSCAPE`, `ARCH`, `B-ROLL`). | Bấm nút trên thanh Pill để chuyển đổi nhanh theo từng thể loại ảnh/video. |
+| **`[4:3]` / `[16:9]`** | **Tỷ lệ khung ngắm Viewfinder:** Khớp vùng xem trước của chế độ Chụp ảnh (`4:3`) hoặc Quay video (`16:9`). | Có thể bấm `📐 KHỚP KHUNG` trên thanh Pill để tinh chỉnh mép trên/dưới $\pm 1\%$ cho khớp khít màn hình máy bạn. |
+| **`P:+0.5°` (Pitch)** | **Góc chúc / ngửa của máy:** Tính bằng độ theo camera sau.<br>• $0^\circ$: Điện thoại dựng thẳng đứng vuông góc mặt đất.<br>• Dương ($+$): Đang ngửa máy lên trời.<br>• Âm ($-$): Đang chúc máy xuống đất. | • Chân dung bán thân: $P \in [-3^\circ, +3^\circ]$ (ngang tầm mắt mẫu).<br>• Chân dung toàn thân: $P \in [+5^\circ, +12^\circ]$ (ngửa máy từ thắt lưng).<br>• Kiến trúc: $P \in [-1.5^\circ, +1.5^\circ]$ (chống đổ cột). |
+| **`R:-0.2°` (Roll)** | **Độ nghiêng đường chân trời:** Tính bằng độ trong mặt phẳng xoay của máy. Đã tự động chuẩn hóa khi cầm dọc hay xoay ngang. | • Chuẩn cân bằng: $|R| \le 1.0^\circ$ (Phong cảnh/Kiến trúc) hoặc $\le 1.5^\circ$ (Chân dung). Đường chân trời hoàn toàn phẳng khi $R \approx 0^\circ$. |
+| **`ω:0.14` (Omega)** | **Vận tốc góc lia máy (Gyroscope):** Đo tốc độ xoay cổ tay ($\text{rad/s}$). | • Tốc độ điện ảnh chuẩn: $\omega \in [0.08, 0.25]\ \text{rad/s}$ ($\approx 4.5^\circ/s \to 14^\circ/s$).<br>• Nếu $\omega > 0.25$: Cảnh báo vàng *"Lia máy quá nhanh!"*.<br>• Nếu $\omega < 0.08$: Cảnh báo *"Lia máy quá chậm hoặc đang giữ tĩnh"*. |
+| **`σ:0.04` (Sigma)** | **Độ đều tay / Chống giật cục:** Độ lệch chuẩn của vận tốc góc trong 300ms. | • Chuẩn mượt mà: $\sigma_\omega \le 0.08\ \text{rad/s}$. Nếu vượt ngưỡng sẽ cảnh báo *"Tay đang bị khựng, hãy khóa cổ tay!"*. |
+| **`● CÂN BẰNG`** | **Trạng thái căn chỉnh (Status Badge):**<br>• `● CÂN BẰNG` (Xanh lá): Đạt cả Pitch và Roll.<br>• `○ LỆCH` (Vàng/Đỏ): Đang bị nghiêng hoặc chúc/ngửa sai góc. | Cơ chế **Hysteresis ($0.3^\circ$)** giữ trạng thái ổn định không bị nhấp nháy viền. Máy sẽ **rung phản hồi xúc giác 1 nhịp (Haptic)** ngay khi đạt chuẩn. |
+
+---
+
+### 2. Các nút thao tác trên thanh nổi (Pill Control View)
+
+Thanh nổi nhỏ gọn ở mép phải màn hình giúp bạn điều khiển HUD mà không cần thoát khỏi Camera:
+
+* **Tay nắm `⠿ HUD`:** 
+  * **Kéo thả:** Chạm giữ và kéo để di chuyển thanh Pill tới bất kỳ góc nào trên màn hình.
+  * **Bấm nhanh:** Thu gọn thanh thành nút nhỏ `⠿+` để không che tầm nhìn, bấm lại để mở rộng.
+* **Nút 1 — `[TÊN CHẾ ĐỘ]`:** Chuyển vòng tròn qua 5 chế độ: `PORT 1/2` $\to$ `PORT FULL` $\to$ `LANDSCAPE` $\to$ `ARCH` $\to$ `STREET` $\to$ `B-ROLL`.
+* **Nút 2 — `LẬT:V1..V4`:** Đổi biến thể bố cục:
+  * Trong *Street:* Lật xoắn ốc Tỷ lệ vàng Fibonacci theo 4 hướng.
+  * Trong *Landscape:* Đổi đường dẫn cong chữ S (*S-Curve*) sang đường chéo (*Diagonals*) hoặc khung Tiền cảnh.
+  * Trong *B-Roll:* Đổi hướng lia máy (Pan Trái $\to$ Phải, Pan Phải $\to$ Trái, Tilt Dưới $\to$ Trên, Orbit Vòng cung).
+* **Nút 3 — `KHUNG:4:3 / 16:9`:** Đổi nhanh tỷ lệ khung ngắm giữa Chụp ảnh (`4:3`) và Quay phim (`16:9`).
+* **Nút 4 — `[SHOT TAG]`:** Chọn nhãn cú máy điện ảnh: `[WIDE]` (Toàn cảnh), `[MED]` (Trung cảnh), `[TIGHT-HANDS]` (Cận tay), `[TIGHT-FACE]` (Cận mặt), `[OTS]` (Qua vai).
+* **Nút 5 — `⏱ NHỊP 5S`:** Kích hoạt thanh đếm nhịp quay 5 giây chuẩn Hollywood (1s đệm đầu + 3s lia mượt + 1s đệm cuối) có rung nhẹ báo chuyển pha.
+* **Nút 6 — `🎯 SET 0°`:** 
+  * Chạm nhanh: Hiệu chỉnh mặt phẳng hiện tại thành mốc $0^\circ$ chuẩn.
+  * Giữ lâu (Long press): Reset offset về $0^\circ$ mặc định của cảm biến.
+* **Nút 7 — `📐 KHỚP KHUNG`:** Mở cụm nút `▲/▼ TRÊN` và `▲/▼ DƯỚI` ($\pm 1\%$) để căn mép khung lưới khít 100% với vùng preview của Camera Xiaomi.
+* **Nút 8 — `✕ TẮT HUD`:** Tắt hoàn toàn 2 cửa sổ nổi khi chụp xong.
+
+---
+
+### 3. Hướng dẫn chụp & quay theo từng thể loại
+
+#### A. Chân dung Bán thân (`PORT 1/2`) — Từ thắt lưng lên đầu
+1. Bấm chọn `PORT 1/2` trên thanh Pill. Chọn ống kính **2x** trên Camera Xiaomi (chống méo mặt).
+2. Canh mắt người mẫu nằm đúng vào vạch ngang màu xanh **EYE-LINE** (1/3 trên).
+3. Đặt đỉnh đầu và vai mẫu vào khung dáng bán thân gợi ý ở giữa màn hình.
+4. Giữ máy ngang tầm mắt mẫu (Pitch $\approx 0^\circ$). Khi khung viền đổi sang màu **Xanh lá** và máy **rung nhẹ 1 nhịp**, bấm nút chụp.
+
+#### B. Chân dung Toàn thân (`PORT FULL`) — Kéo dài chân, "Hack" dáng
+1. Bấm chọn `PORT FULL`. 
+2. Canh mũi giày của mẫu chạm sát vào vạch màu xanh lá **VẠCH MŨI GIÀY** ở mép dưới màn hình (chừa 5% khoảng đệm dưới chân).
+3. Hạ thấp điện thoại xuống ngang thắt lưng của bạn, hơi **ngửa máy lên một góc $+5^\circ \to +12^\circ$**.
+4. Khung viền báo Xanh lá $\rightarrow$ Chân mẫu sẽ dài miên man tự nhiên mà không bị biến dạng cơ thể!
+
+#### C. Phong cảnh (`LANDSCAPE`) — Chiều sâu 3 lớp
+1. Bấm chọn `LANDSCAPE`.
+2. Giữ thước thủy trung tâm cân bằng nằm ngang ($|R| \le 1.0^\circ$).
+3. **Quy tắc 1/3:** 
+   * Nếu trời đẹp (hoàng hôn, mây vần): Đặt chân trời ở vạch 1/3 dưới (bầu trời chiếm 2/3).
+   * Nếu đất/biển đẹp: Đặt chân trời ở vạch 1/3 trên.
+4. Bấm `LẬT` để bật đường cong chữ S (*S-Curve*) dẫn mắt từ vật thể tiền cảnh (con đường, tảng đá) vào chủ thể chính.
+
+#### D. Kiến trúc & Nội thất (`ARCH`) — Chống đổ cột (Keystone Effect)
+1. Bấm chọn `ARCH`.
+2. Màn hình sẽ hiện các đường gióng dọc song song và trục đối xứng chính giữa.
+3. Luôn giữ máy vuông góc với mặt đất ($\text{Pitch} \in [-1.5^\circ, +1.5^\circ]$).
+4. Canh mép tường hoặc cột nhà song song với lưới gióng dọc. Muốn lấy trọn đỉnh tòa nhà cao tầng, hãy **lùi ra xa** hoặc chuyển sang camera siêu rộng **0.6x** nhưng vẫn giữ $\text{Pitch} = 0^\circ$ thay vì ngửa máy lên.
+
+#### E. Quay Video B-Roll (`B-ROLL`) — Lia máy mượt mà & Đếm nhịp 5 giây
+1. Bấm chọn `B-ROLL`, chọn nhãn cú máy (ví dụ `[TIGHT-HANDS]` khi quay tay pha cà phê, hoặc `[WIDE]` khi quay phong cảnh).
+2. Bấm nút **`⏱ NHỊP 5S`**:
+   * **Pha 1 (1.0s đầu - Màu Vàng):** Giữ máy đứng yên tuyệt đối để lấy khung hình tĩnh đầu clip.
+   * **Pha 2 (3.0s giữa - Màu Xanh lá):** Bắt đầu lia máy mượt theo hướng mũi tên Vector. Chú ý khóa cứng cổ tay, xoay bằng cả phần hông và thân trên.
+   * **Pha 3 (1.0s cuối - Màu Vàng):** Dừng máy và giữ im 1 giây trước khi bấm tắt quay.
+3. Nếu bạn lia máy quá nhanh hoặc giật tay, HUD sẽ hiện cảnh báo tức thì để bạn quay lại cú máy hoàn hảo hơn.
+
+---
+
+### 4. Tự động ghi nhật ký cú máy (`shot_log.json`)
+
+Bạn không cần ghi chép thủ công. Ngay khi bấm dừng quay trên Camera Xiaomi, `MediaShotLogger` sẽ tự động bắt file mới sinh ra trong `DCIM/Camera/` và lưu thông số vào:  
+📁 `/Documents/CameraCoach/shot_log.json`
+
+Ví dụ nội dung file:
+```json
+[
+  {
+    "file_name": "VID_20261112_140520.mp4",
+    "timestamp": 1794467120,
+    "mode": "BROLL",
+    "shot_tag": "TIGHT-HANDS",
+    "avg_pitch_deg": -5.2,
+    "avg_roll_deg": 0.3,
+    "max_gyro_rad_s": 0.16,
+    "is_smooth": true
+  }
+]
+```
+
+**Cách khai thác khi dựng video:**
+* Khi chép video sang máy tính để edit CapCut / Premiere, bạn chỉ cần mở file `shot_log.json` để biết ngay clip nào là cỡ cảnh gì (`TIGHT-HANDS` hay `WIDE`).
+* Lọc những clip có `"is_smooth": true` để đưa vào timeline dựng mà không mất công bấm mở xem lại từng video bị rung lắc!
+
+---
+
+### 5. Xử lý các thông báo bảo mật thường gặp khi cài đặt
+
+* **Thông báo "Bị chặn bởi Play Protect" (Google Play Protect):**  
+  Do app được build trực tiếp từ mã nguồn chưa tải lên Google Play Store. Bạn chỉ cần bấm **"Chi tiết khác" (More details)** $\rightarrow$ Bấm **"Vẫn cài đặt" (Install anyway)**.
+* **Thông báo "Cài đặt bị hạn chế" (Restricted Settings) trên Xiaomi HyperOS/MIUI:**  
+  Vào **Cài đặt** điện thoại $\rightarrow$ **Ứng dụng** $\rightarrow$ **Quản lý ứng dụng** $\rightarrow$ Chọn **CAM-HUD Coach** $\rightarrow$ Bấm vào dấu **`⋮`** ở góc trên bên phải $\rightarrow$ Chọn **"Cho phép cài đặt bị hạn chế"**. Sau đó quay lại bật quyền Trợ năng bình thường.
+* **Quyền ảnh/video trên Android 14:**  
+  Khi hộp thoại quyền MediaStore hiện lên, hãy chọn **"Cho phép tất cả ảnh và video"** để app phát hiện được mọi file mới quay.
+
+---
+
+---
+
 ## 📦 Các công cụ & Thư viện cần cài đặt
 
 Dự án được thiết kế **100% Native Kotlin** không phụ thuộc thư viện bên thứ ba nặng nề. Khi clone về laptop ở nhà, bạn chỉ cần chuẩn bị các thành phần dưới đây:

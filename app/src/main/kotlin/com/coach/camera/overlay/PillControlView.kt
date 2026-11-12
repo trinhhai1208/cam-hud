@@ -131,16 +131,6 @@ class PillControlView(
         }
         controlsContainer.addView(btnZeroCalib, buildMarginParams())
 
-        btnFrameToggle = createPillButton("📐 KHỚP KHUNG", "#334155").apply {
-            setOnClickListener {
-                isFrameAdjustExpanded = !isFrameAdjustExpanded
-                gridOverlayView.isViewfinderCalibrationMode = isFrameAdjustExpanded
-                frameAdjustContainer.visibility = if (isFrameAdjustExpanded) View.VISIBLE else View.GONE
-                text = if (isFrameAdjustExpanded) "✓ XONG KHUNG" else "📐 KHỚP KHUNG"
-            }
-        }
-        controlsContainer.addView(btnFrameToggle, buildMarginParams())
-
         // Cụm nút tinh chỉnh mép Trên / Dưới của khung ngắm khớp 100% với Camera Xiaomi
         frameAdjustContainer = LinearLayout(context).apply {
             orientation = VERTICAL
@@ -171,6 +161,16 @@ class PillControlView(
             },
             buildMarginParams()
         )
+
+        btnFrameToggle = createPillButton("📐 KHỚP KHUNG", "#334155").apply {
+            setOnClickListener {
+                isFrameAdjustExpanded = !isFrameAdjustExpanded
+                gridOverlayView.isViewfinderCalibrationMode = isFrameAdjustExpanded
+                frameAdjustContainer.visibility = if (isFrameAdjustExpanded) View.VISIBLE else View.GONE
+                text = if (isFrameAdjustExpanded) "✓ XONG KHUNG" else "📐 KHỚP KHUNG"
+            }
+        }
+        controlsContainer.addView(btnFrameToggle, buildMarginParams())
         controlsContainer.addView(frameAdjustContainer)
 
         btnClose = createPillButton("✕ TẮT HUD", "#991B1B").apply {
@@ -183,8 +183,9 @@ class PillControlView(
         addView(controlsContainer)
     }
 
-    private val configListener = {
+    private val configListener: () -> Unit = {
         post { syncLabelsFromEngine() }
+        Unit
     }
 
     override fun onAttachedToWindow() {
